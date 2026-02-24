@@ -1,0 +1,323 @@
+# 🛡 Minor Project 1 – Log Sentinel
+## Mission: Detect Brute Force, SQL Injection & XSS in Apache Logs
+
+---
+
+# 🎯 Objective
+
+Build a Python-based detection engine that:
+
+- Parses Apache access logs
+- Detects:
+  - Brute force login attempts
+  - SQL Injection payloads
+  - XSS attacks
+- Generates a structured JSON security report
+- Supports threshold-based alerting
+
+This project simulates a real SOC analyst task.
+
+---
+
+# 🧱 PHASE 0 – Prerequisites
+
+Students must know:
+
+- Lists & Dictionaries
+- File I/O
+- Regular Expressions (Regex)
+- Python `re` module
+- JSON handling
+- CLI arguments (`sys.argv`)
+- Basic OS interaction (`os` module)
+
+---
+
+# 🗂 PHASE 1 – Lab Setup
+
+## 1️⃣ Environment Setup
+
+```bash
+mkdir log_sentinel
+cd log_sentinel
+python -m venv venv
+source venv/bin/activate  # Linux
+venv\Scripts\activate     # Windows
+````
+
+Create structure:
+
+```
+log_sentinel/
+│
+├── log_sentinel.py
+├── sample_logs/
+│   └── access.log
+├── reports/
+└── README.md
+```
+
+No external libraries required.
+
+---
+
+# 📜 PHASE 2 – Understand Apache Log Format
+
+Typical Apache log format:
+
+```
+192.168.1.10 - - [16/Feb/2026:10:15:32 +0000] "GET /login.php HTTP/1.1" 401 532
+```
+
+### Extract the following fields:
+
+* IP Address
+* Timestamp
+* HTTP Method
+* URL
+* Status Code
+
+---
+
+# 🧪 PHASE 3 – Build Log Parser
+
+## Step 1: Safe File Reading
+
+* Handle missing file
+* Handle empty file
+* Read file line-by-line (memory efficient)
+
+```python
+with open(file_path, "r") as f:
+```
+
+---
+
+## Step 2: Extract Fields Using Regex
+
+Create a regex pattern to extract:
+
+* IP
+* Timestamp
+* Method
+* URL
+* Status Code
+
+Store each entry as:
+
+```python
+log_entry = {
+    "ip": ip,
+    "timestamp": timestamp,
+    "method": method,
+    "url": url,
+    "status": status
+}
+```
+
+Append to:
+
+```python
+parsed_logs = []
+```
+
+---
+
+# 🚨 PHASE 4 – Attack Detection Logic
+
+---
+
+## 🔴 A. Brute Force Detection
+
+### Logic:
+
+* Multiple failed login attempts
+* Same IP
+* Status code 401 or 403
+* Targeting `/login`
+
+### Implementation:
+
+1. Filter logs where:
+
+   * URL contains `/login`
+   * Status code = 401 or 403
+
+2. Count failed attempts per IP:
+
+```python
+failed_attempts = {}
+```
+
+3. If attempts > threshold (example: 5)
+
+Flag as:
+
+```python
+{
+  "type": "Brute Force",
+  "ip": "192.168.1.10",
+  "attempts": 7
+}
+```
+
+---
+
+## 🔴 B. SQL Injection Detection
+
+Detect patterns such as:
+
+* `' OR 1=1`
+* `UNION SELECT`
+* `--`
+* `DROP TABLE`
+* `%27` (encoded quote)
+
+Example pattern list:
+
+```python
+sqli_patterns = [
+    r"(?i)or\s+1=1",
+    r"(?i)union\s+select",
+    r"--",
+    r"drop\s+table"
+]
+```
+
+If URL matches → Flag as SQL Injection.
+
+---
+
+## 🔴 C. XSS Detection
+
+Detect:
+
+* `<script>`
+* `javascript:`
+* `onerror=`
+* `alert(`
+
+Example:
+
+```python
+xss_patterns = [
+    r"<script>",
+    r"javascript:",
+    r"onerror=",
+    r"alert\("
+]
+```
+
+If match → Flag as XSS.
+
+---
+
+# 📊 PHASE 5 – Reporting Engine
+
+## 1️⃣ Create Summary
+
+```python
+summary = {
+    "total_logs": len(parsed_logs),
+    "brute_force": count_brute,
+    "sqli": count_sqli,
+    "xss": count_xss
+}
+```
+
+---
+
+## 2️⃣ Generate JSON Report
+
+File path:
+
+```
+reports/security_report.json
+```
+
+Structure:
+
+```json
+{
+  "summary": {...},
+  "incidents": [
+    {...},
+    {...}
+  ]
+}
+```
+
+Use:
+
+```python
+import json
+json.dump(data, file, indent=4)
+```
+
+---
+
+# 🔔 PHASE 6 – Threshold-Based Alert
+
+Support CLI usage:
+
+```bash
+python log_sentinel.py sample_logs/access.log 5
+```
+
+Where:
+
+* `5` = brute force threshold
+
+If threshold exceeded:
+
+```
+ALERT: Brute force detected from 192.168.1.10
+```
+
+---
+
+# 🔄 PHASE 7 – Continuous Monitoring (Advanced)
+
+## Linux (Cron)
+
+```bash
+crontab -e
+*/5 * * * * python3 /path/log_sentinel.py /var/log/apache2/access.log 5
+```
+
+## Windows (Task Scheduler)
+
+* Trigger: Every 5 minutes
+* Action: Run Python script
+
+---
+
+# 🧠 PHASE 8 – Performance Optimization (Bonus)
+
+Improve performance by:
+
+* Using sets for unique IPs
+* Compiling regex patterns:
+
+```python
+pattern = re.compile(r"or\s+1=1", re.IGNORECASE)
+```
+
+* Avoiding repeated scanning
+
+---
+
+# 📦 Final Deliverables
+
+Students must submit:
+
+1. `log_sentinel.py`
+2. Sample test log file
+3. Generated JSON report
+4. Documentation including:
+
+   * Regex explanation
+   * Detection logic explanation
+   * False positives discussion
+
+---
